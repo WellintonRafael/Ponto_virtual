@@ -1,0 +1,21 @@
+Metadata-Version: 2.0
+Name: stubs
+Version: 1.0.0
+Summary: Tools for setting up stubs and mocks.
+Home-page: http://github.com/zestyping/stubs
+Author: Ka-Ping Yee
+Author-email: zestyping@gmail.com
+License: Apache 2.0
+Keywords: development testing mocking
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+
+UNKNOWN
+
+
