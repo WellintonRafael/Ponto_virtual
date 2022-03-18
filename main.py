@@ -3,10 +3,16 @@ from PyQt5 import uic, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 import sqlite3
 from reportlab.pdfgen import canvas
+from funcoes import (
+    data_brasileira_para_americana, 
+    data_americana_para_brasileira,
+    mostra_data,
+    mostra_hora
+)
 
 
 # Funções que escrevem mensagens no label da tela principal.
-def mostra_msg_de_dados_invalidos() -> None:
+def msg_de_dados_invalidos() -> None:
     primeira_tela.label_2.setText('Usuário ou senha inválidos !!!')
     primeira_tela.lineEdit_3.setText('')
     primeira_tela.lineEdit_2.setText('')
@@ -24,25 +30,7 @@ def mostra_msg_de_sucesso_saida() -> None:
     primeira_tela.lineEdit_2.setText("")
 
 
-# Funções que formatam hora e data.
-def mostra_data() -> str:
-    data_atual = datetime.now()
-    data_formatada: str = data_atual.strftime('%Y-%m-%d')
-    return data_formatada
-
-
-data_exata: str = mostra_data()
-
-
-def mostra_hora() -> str:
-    hora_atual = datetime.now()
-    hora_formatada: str = hora_atual.strftime('%H:%M')
-    return hora_formatada
-
-hora_exata: str = mostra_hora()
-
-
-# Faz a marcação de Entrada e Ent_almoco no banco de dados.
+# Faz a marcação de "Entrada" e "Ent_almoco" no banco de dados.
 # Caso o mesmo usuário já tenha feito as duas marcações no mesmo dia,
 # é impresso uma mensagem na tela informando que não é possivel
 # realizar a marcação.
@@ -63,23 +51,20 @@ def marca_entrada() -> None:
     except(Exception):
         primeira_tela.label_2.setText('Aconteceu um erro! Tente novamente!')
     if senha_bd != senha_login:
-        mostra_msg_de_dados_invalidos()
+        msg_de_dados_invalidos()
     # Se a senha estiver correta, \
     # faz a conexão com o database e efetua a marcação.
     else:
-        hora_exata: str = mostra_hora()
-        data_exata: str = mostra_data()
         confirmar_entrada = QMessageBox()
         confirmar_entrada.setWindowTitle('Entrada')
         confirmar_entrada.setText('Tem certeza que deseja marcar ENTRADA?')
         confirmar_entrada.setIcon(QMessageBox.Question)
         confirmar_entrada.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-
         resposta = confirmar_entrada.exec_()
+        
         if resposta == QMessageBox.No:
             primeira_tela.show()
-            primeira_tela.label_2.setText(hora_exata)
-            primeira_tela.label_2.setText(f'{mostra_hora()}')
+            primeira_tela.label_2.setText(mostra_hora())
         elif resposta == QMessageBox.Yes:
             try:
                 banco = sqlite3.connect('database_ponto_digital.db')
@@ -105,7 +90,7 @@ def marca_entrada() -> None:
                 try:
                     cursor.execute("SELECT Entrada FROM Marcacao_Ponto \
                         WHERE (Nome = '"+nome_cadastrado_no_bd+"') and \
-                        (Data = '"+data_exata+"')")
+                        (Data = '"+mostra_data()+"')")
                     entrada = cursor.fetchall()
                     entrada = entrada[0][0]
                     return True
@@ -118,9 +103,9 @@ def marca_entrada() -> None:
                     cod_funcionario_bd = cursor.fetchall()
                     cod_funcionario_bd = cod_funcionario_bd[0][0]
                     cursor.execute("INSERT INTO Marcacao_Ponto \
-                        (Cod_funcionario, Nome ,Data,Entrada) VALUES \
+                        (Cod_funcionario, Nome, Data, Entrada) VALUES \
                         ('"+cod_funcionario_bd+"', '"+nome_cadastrado_no_bd+"', \
-                        '"+data_exata+"', '"+hora_exata+"')")
+                        '"+mostra_data()+"', '"+mostra_hora()+"')")
                     banco.commit()
                     banco.close()
                     mostra_msg_de_sucesso_entrada()
@@ -133,9 +118,11 @@ def marca_entrada() -> None:
             # é atualizada o campo Ent_almoco.
             def buscador_2() -> None:
                 try:
-                    cursor.execute("SELECT Ent_almoco FROM Marcacao_Ponto \
+                    cursor.execute(
+                        "SELECT Ent_almoco FROM Marcacao_Ponto \
                         WHERE (Nome = '"+nome_cadastrado_no_bd+"') and \
-                        (Data = '"+data_exata+"')")
+                        (Data = '"+mostra_data()+"')"
+                    )
                     entrada_almoco = cursor.fetchall()
                     entrada_almoco = entrada_almoco[0][0]
                     if len(entrada_almoco) == 5:
@@ -148,9 +135,9 @@ def marca_entrada() -> None:
             elif buscador_2() is False:
                 try:
                     cursor.execute("UPDATE Marcacao_Ponto SET \
-                        Ent_almoco = '"+hora_exata+"' WHERE \
+                        Ent_almoco = '"+mostra_hora()+"' WHERE \
                         (Nome = '"+nome_cadastrado_no_bd+"') and \
-                        (Data = '"+data_exata+"')")
+                        (Data = '"+mostra_data()+"')")
                     banco.commit()
                     banco.close()
                     print()
@@ -177,11 +164,9 @@ def marca_saida() -> None:
     except(Exception):
         primeira_tela.label_2.setText("Aconteceu um erro! Tente novamente!")
     if senha_bd != senha_login:
-        mostra_msg_de_dados_invalidos()
+        msg_de_dados_invalidos()
     # Se a senha estiver Ok, faz a conexão com o database e efetua a marcação
     else:
-        hora_exata = mostra_hora()
-        data_exata = mostra_data()
         confirmar_saida = QMessageBox()
         confirmar_saida.setWindowTitle('Entrada')
         confirmar_saida.setText('Tem certeza que deseja marcar SAÍDA?')
@@ -191,8 +176,7 @@ def marca_saida() -> None:
         resposta = confirmar_saida.exec_()
         if resposta == QMessageBox.No:
             primeira_tela.show()
-            primeira_tela.label_2.setText(hora_exata)
-            primeira_tela.label_2.setText(f'{mostra_hora()}')
+            primeira_tela.label_2.setText(mostra_hora())
         elif resposta == QMessageBox.Yes:
             try:
                 banco = sqlite3.connect('database_ponto_digital.db')
@@ -203,31 +187,32 @@ def marca_saida() -> None:
                 nome_cadastrado_no_bd = nome_cadastrado_no_bd[0][0]
                 cursor.execute("SELECT Sai_almoco, Saida FROM Marcacao_Ponto \
                     WHERE (Nome = '"+nome_cadastrado_no_bd+"') and \
-                    (Data = '"+data_exata+"')")
+                    (Data = '"+mostra_data()+"')")
                 select = cursor.fetchall()
                 saida_almoco = select[0][0]
                 saida = select[0][1]
-                hora_exata = mostra_hora()
-                data_exata = mostra_data()
                 if saida_almoco is None:
                     cursor.execute("UPDATE Marcacao_Ponto SET Sai_almoco  = \
-                        '"+hora_exata+"' WHERE \
+                        '"+mostra_hora()+"' WHERE \
                         (Nome = '"+nome_cadastrado_no_bd+"') and \
-                        (Data = '"+data_exata+"')")
+                        (Data = '"+mostra_data()+"')")
                     banco.commit()
                     banco.close()
                     mostra_msg_de_sucesso_saida()
                 elif saida is None:
-                    cursor.execute("UPDATE Marcacao_Ponto SET \
-                        Saida  = '"+hora_exata+"' \
+                    cursor.execute(
+                        "UPDATE Marcacao_Ponto SET \
+                        Saida  = '"+mostra_hora()+"' \
                         WHERE (Nome = '"+nome_cadastrado_no_bd+"') and \
-                        (Data = '"+data_exata+"')")
+                        (Data = '"+mostra_data()+"')"
+                    )
                     banco.commit()
                     banco.close()
                     primeira_tela.lineEdit_3.setText('')
                     primeira_tela.lineEdit_2.setText('')
                     primeira_tela.label_2.setText(
-                        'Fim do Expediente! Bom descanso!   :)')
+                        'Fim do Expediente! Bom descanso!   :)'
+                    )
                 else:
                     primeira_tela.label_2.setText(
                         'Você já fez todas as marcações hoje!')
@@ -320,16 +305,7 @@ def consultar_marcacoes() -> None:
                         for c in range(0, 1):
                             datas: str = dados_bd_2[item][c]
                             datas = str(datas)
-                            d_0 = datas[0]
-                            d_1 = datas[1]
-                            d_2 = datas[2]
-                            d_3 = datas[3]
-                            d_5 = datas[5]
-                            d_6 = datas[6]
-                            d_8 = datas[8]
-                            d_9 = datas[9]
-                            data_tratada = str(
-                                f"{d_8}{d_9}/{d_5}{d_6}/{d_0}{d_1}{d_2}{d_3}")
+                            data_tratada = data_americana_para_brasileira(datas)
                             lista_de_datas_tratadas.append(data_tratada)
                     tela_pesquisa.tableWidget.setRowCount(len(dados_bd_2))
                     tela_pesquisa.tableWidget.setColumnCount(5)
@@ -348,28 +324,13 @@ def consultar_marcacoes() -> None:
                     tela_pesquisa.pushButton_corrigir.setEnabled(True)
                 if tela_pesquisa.radioButton_por_data.isChecked():
                     data_inicio = tela_pesquisa.lineEdit_2.text()
+                    data_inicio = str(data_inicio)
                     data_fim = tela_pesquisa.lineEdit_3.text()
-
-                    di_0 = data_inicio[0]
-                    di_1 = data_inicio[1]
-                    di_3 = data_inicio[3]
-                    di_4 = data_inicio[4]
-                    di_6 = data_inicio[6]
-                    di_7 = data_inicio[7]
-                    di_8 = data_inicio[8]
-                    di_9 = data_inicio[9]
-                    data_inicio_tratada = str(
-                        f"{di_6}{di_7}{di_8}{di_9}-{di_3}{di_4}-{di_0}{di_1}")
-                    df_0 = data_fim[0]
-                    df_1 = data_fim[1]
-                    df_3 = data_fim[3]
-                    df_4 = data_fim[4]
-                    df_6 = data_fim[6]
-                    df_7 = data_fim[7]
-                    df_8 = data_fim[8]
-                    df_9 = data_fim[9]
-                    data_fim_tratada = str(
-                        f"{df_6}{df_7}{df_8}{df_9}-{df_3}{df_4}-{df_0}{df_1}")
+                    data_fim = str(data_fim)
+                    data_inicio_tratada = data_brasileira_para_americana(data_inicio)
+                    data_inicio_tratada = str(data_inicio_tratada)
+                    data_fim_tratada = data_brasileira_para_americana(data_fim)
+                    data_fim_tratada = str(data_fim_tratada)
                     cursor.execute("SELECT Data, Entrada, Sai_almoco, \
                         Ent_almoco, Saida FROM \
                         Marcacao_Ponto WHERE Data BETWEEN \
@@ -382,16 +343,7 @@ def consultar_marcacoes() -> None:
                         for c in range(0, 1):
                             datas = dados_bd_3[item_2][c]
                             datas = str(datas)
-                            d_0 = datas[0]
-                            d_1 = datas[1]
-                            d_2 = datas[2]
-                            d_3 = datas[3]
-                            d_5 = datas[5]
-                            d_6 = datas[6]
-                            d_8 = datas[8]
-                            d_9 = datas[9]
-                            data_tratada = str(
-                                f"{d_8}{d_9}/{d_5}{d_6}/{d_0}{d_1}{d_2}{d_3}")
+                            data_tratada = data_americana_para_brasileira(datas)
                             lista_de_datas_tratadas.append(data_tratada)
                     tela_pesquisa.tableWidget.setRowCount(len(dados_bd_3))
                     tela_pesquisa.tableWidget.setColumnCount(5)
@@ -417,10 +369,12 @@ def consultar_marcacoes() -> None:
             except(Exception):
                 box = QMessageBox()
                 box.setWindowTitle('Filtrar por data')
-                box.setText
-                ('Não foram encontrados registros com as datas informadas!')
-                box.setInformativeText('Preencha os campos \"Data inicial" e \
-                    "Data final" com o período a ser consultado.')
+                box.setText(
+                    'Não foram encontrados registros com as datas informadas!'
+                )
+                box.setInformativeText(
+                    'Preencha os campos "Data inicial" e "Data final" com o período a ser consultado.'
+                )
                 box.setIcon(QMessageBox.Warning)
                 box.setStandardButtons(QMessageBox.Ok)
                 box.exec_()
@@ -429,8 +383,9 @@ def consultar_marcacoes() -> None:
         if cod_pesquisado != dados_bd:
             box = QMessageBox()
             box.setWindowTitle('Código inválido!')
-            box.setText
-            ('O código pesquisado NÃO É VÁLIDO! Tente novamente!')
+            box.setText(
+                'O código pesquisado NÃO É VÁLIDO! Tente novamente!'
+            )
             box.setIcon(QMessageBox.Warning)
             box.setStandardButtons(QMessageBox.Ok)
             box.exec_()
@@ -438,15 +393,14 @@ def consultar_marcacoes() -> None:
 
 
 def gerador_de_pdf() -> None:
-    global endereco_salvar_pdf
     try:
-        endereco_salvar_pdf = (f"C:/Users/PC/OneDrive/Área de Trabalho\
-            /Folhas ponto/{nome}.PDF")
+        endereco_salvar_pdf = (f"C:/Users/PC/OneDrive/Área de Trabalho/Folhas ponto/{nome}.PDF")
         if tela_pesquisa.radioButton_por_data.isChecked():
             box = QMessageBox()
             box.setWindowTitle('Gerar PDF')
-            box.setText
-            (f'Salvar dados de {nome}? Período: {data_inicio} - {data_fim}')
+            box.setText(
+                f'Salvar dados de {nome}? Período: {data_inicio} - {data_fim}'
+            )
             box.setInformativeText(f'Salvar como: {endereco_salvar_pdf}')
             box.setIcon(QMessageBox.Question)
             box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
@@ -462,28 +416,18 @@ def gerador_de_pdf() -> None:
                     BETWEEN '"+data_inicio_tratada+"' AND \
                     '"+data_fim_tratada+"' AND \
                     Cod_funcionario = '"+cod_pesquisado+"'")
-                dados_bd_4 = cursor.fetchall()
+                dados_bd = cursor.fetchall()
                 banco.close()
 
                 # Cria uma lista com as datas formatadas
-                lista_de_datas_tratadas_2 = []
-                contador_2 = 0
-                for item in range(0, len(dados_bd_4)):
+                lista_de_datas_tratadas = []
+                for item in range(0, len(dados_bd)):
                     for c in range(0, 1):
-                        datas_2 = dados_bd_4[item][c]
-                        datas_2 = str(datas_2)
-                        d00 = datas_2[0]
-                        d10 = datas_2[1]
-                        d20 = datas_2[2]
-                        d30 = datas_2[3]
-                        d50 = datas_2[5]
-                        d60 = datas_2[6]
-                        d80 = datas_2[8]
-                        d90 = datas_2[9]
-                        data_tratada_2 = str(
-                            f"{d80}{d90}/{d50}{d60}/{d00}{d10}{d20}{d30}"
-                            )
-                        lista_de_datas_tratadas_2.append(data_tratada_2)
+                        datas = dados_bd[item][c]
+                        datas = str(datas)
+                        data_tratada = data_americana_para_brasileira(datas)
+                        data_tratada = str(data_tratada)
+                        lista_de_datas_tratadas.append(data_tratada)
 
                 # Cria uma lista com a SOMA das horas
                 banco = sqlite3.connect('database_ponto_digital.db')
@@ -511,30 +455,24 @@ def gerador_de_pdf() -> None:
                         saida = dados_bd_5[0][3]
                         banco.close()
                         # Entrada
-                        e0 = entrada[0]
-                        e1 = entrada[1]
-                        e3 = entrada[3]
-                        e4 = entrada[4]
-                        entrada_h = e0 + e1
+                        entrada = entrada.split(':')
+                        entrada_h = entrada[0]
                         entrada_h = int(entrada_h)
-                        entrada_m = e3 + e4
+                        entrada_m = entrada[1]
                         entrada_m = int(entrada_m)
                         hora_entrada = datetime(
                             2022, 1, 29, entrada_h, entrada_m
-                            )
+                        )
                         hora_entrada.time()
                         # Sai_almoco
-                        s_a0 = sai_almoco[0]
-                        s_a1 = sai_almoco[1]
-                        s_a3 = sai_almoco[3]
-                        s_a4 = sai_almoco[4]
-                        sai_almoco_h = s_a0 + s_a1
+                        sai_almoco = sai_almoco.split(':')
+                        sai_almoco_h = sai_almoco[0]
                         sai_almoco_h = int(sai_almoco_h)
-                        sai_almoco_m = s_a3 + s_a4
+                        sai_almoco_m = sai_almoco[1]
                         sai_almoco_m = int(sai_almoco_m)
                         hora_sai_almoco = datetime(
                             2022, 1, 29, sai_almoco_h, sai_almoco_m
-                            )
+                        )
                         hora_sai_almoco.time()
 
                         resultado_1 = hora_sai_almoco - hora_entrada
@@ -543,27 +481,17 @@ def gerador_de_pdf() -> None:
                         resultado_geral_1 = 'Primeiro_erro'
                     try:
                         # Ent_almoco
-                        e_a0 = ent_almoco[0]
-                        e_a1 = ent_almoco[1]
-                        e_a3 = ent_almoco[3]
-                        e_a4 = ent_almoco[4]
-                        ent_almoco_h = e_a0 + e_a1
-                        ent_almoco_h = int(ent_almoco_h)
-                        ent_almoco_m = e_a3 + e_a4
-                        ent_almoco_m = int(ent_almoco_m)
+                        ent_almoco = ent_almoco.split(':')
+                        ent_almoco_h = int(ent_almoco[0])
+                        ent_almoco_m = int(ent_almoco[1])
                         hora_ent_almoco = datetime(
                             2022, 1, 29, ent_almoco_h, ent_almoco_m
-                            )
+                        )
                         hora_ent_almoco.time()
                         # Saída
-                        s0 = saida[0]
-                        s1 = saida[1]
-                        s3 = saida[3]
-                        s4 = saida[4]
-                        saida_h = s0 + s1
-                        saida_h = int(saida_h)
-                        saida_m = s3 + s4
-                        saida_m = int(saida_m)
+                        saida = saida.split(':')
+                        saida_h = int(saida[0])
+                        saida_m = int(saida[1])
                         hora_saida = datetime(2022, 1, 29, saida_h, saida_m)
                         hora_saida.time()
 
@@ -600,16 +528,15 @@ def gerador_de_pdf() -> None:
                 pdf.drawString(445, 680, "SOMA")
 
                 y = 0
-                for i in range(0, len(dados_bd_4)):
+                contador_2 = 0
+                for i in range(0, len(dados_bd)):
                     y += 16
-                    pdf.drawString
-                    (45, 680 - y, str(lista_de_datas_tratadas_2[contador_2]))
-                    pdf.drawString(145, 680 - y, str(dados_bd_4[i][1]))
-                    pdf.drawString(220, 680 - y, str(dados_bd_4[i][2]))
-                    pdf.drawString(295, 680 - y, str(dados_bd_4[i][3]))
-                    pdf.drawString(370, 680 - y, str(dados_bd_4[i][4]))
-                    pdf.drawString
-                    (445, 680 - y, str(lista_somar_hora[contador_2]))
+                    pdf.drawString(45, 680 - y, str(lista_de_datas_tratadas[contador_2]))
+                    pdf.drawString(145, 680 - y, str(dados_bd[i][1]))
+                    pdf.drawString(220, 680 - y, str(dados_bd[i][2]))
+                    pdf.drawString(295, 680 - y, str(dados_bd[i][3]))
+                    pdf.drawString(370, 680 - y, str(dados_bd[i][4]))
+                    pdf.drawString(445, 680 - y, str(lista_somar_hora[contador_2]))
                     contador_2 += 1
 
                 pdf.save()
@@ -681,17 +608,8 @@ def corrigir_marcacoes() -> None:
             sai_almoco = dados_bd[0][2]
             ent_almoco = dados_bd[0][3]
             saida = dados_bd[0][4]
-            d_0 = data[0]
-            d_1 = data[1]
-            d_2 = data[2]
-            d_3 = data[3]
-            d_5 = data[5]
-            d_6 = data[6]
-            d_8 = data[8]
-            d_9 = data[9]
-            data_tratada = str(
-                f"{d_8}{d_9}/{d_5}{d_6}/{d_0}{d_1}{d_2}{d_3}"
-                )
+
+            data_tratada = data_americana_para_brasileira(data)
             entrada = str(entrada)
             sai_almoco = str(sai_almoco)
             ent_almoco = str(ent_almoco)
@@ -744,18 +662,8 @@ def corrigir_marcacoes() -> None:
             sai_almoco = dados_bd[0][2]
             ent_almoco = dados_bd[0][3]
             saida = dados_bd[0][4]
-            d_0 = data[0]
-            d_1 = data[1]
-            d_2 = data[2]
-            d_3 = data[3]
-            d_5 = data[5]
-            d_6 = data[6]
-            d_8 = data[8]
-            d_9 = data[9]
-            data_tratada = str(
-                f"{d_8}{d_9}/{d_5}{d_6}/{d_0}{d_1}{d_2}{d_3}"
-                )
-
+            data_tratada = data_americana_para_brasileira(data)
+            data_tratada = str(data_tratada)
             entrada = str(entrada)
             sai_almoco = str(sai_almoco)
             ent_almoco = str(ent_almoco)
@@ -863,7 +771,7 @@ def sair_da_tela_de_pesquisa() -> None:
     tela_editar_dados.close()
     tela_pesquisa.close()
     primeira_tela.show()
-    primeira_tela.label_2.setText(f'{mostra_hora()}')
+    primeira_tela.label_2.setText(mostra_hora())
     primeira_tela.lineEdit_3.setText("")
     primeira_tela.lineEdit_2.setText("")
 
@@ -930,5 +838,5 @@ tela_editar_dados.pushButton_Voltar.clicked.connect(sair_da_tela_editar_dados)
 
 # Início do programa.
 primeira_tela.show()
-primeira_tela.label_2.setText(f'{mostra_hora()}')
+primeira_tela.label_2.setText(mostra_hora())
 app.exec()
