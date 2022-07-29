@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>441</width>
-    <height>442</height>
+    <width>443</width>
+    <height>440</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -137,7 +137,7 @@ font: 11pt &quot;MS Shell Dlg 2&quot;;</string>
     <rect>
      <x>20</x>
      <y>410</y>
-     <width>191</width>
+     <width>121</width>
      <height>21</height>
     </rect>
    </property>
@@ -226,9 +226,9 @@ background-color: rgb(200, 100, 150);
   <widget class="QPushButton" name="button_pesquisar">
    <property name="geometry">
     <rect>
-     <x>230</x>
+     <x>190</x>
      <y>410</y>
-     <width>191</width>
+     <width>111</width>
      <height>21</height>
     </rect>
    </property>
@@ -238,6 +238,19 @@ background-color: rgb(200, 100, 150);
    </property>
    <property name="text">
     <string>Consultar marcações</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_admin">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>410</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Login Admin</string>
    </property>
   </widget>
  </widget>
